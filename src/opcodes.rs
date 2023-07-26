@@ -1,6 +1,6 @@
 use crate::cpu::AddressingMode;
 
-enum Opcode {
+pub enum Opcode {
     ADC, // Add with Carry
     AND, // Logical AND
     ASL, // Arithmetic Shift Left
@@ -59,17 +59,21 @@ enum Opcode {
     TYA, // Transfer Y to Accumulator
 
     XXX, // Unknown (Unofficial Opcodes)
+    // Unofficial Opcodes are not implemented in this project (yet).
 }
 
 pub struct Instruction {
-    hexcode: u8,
-    operate: Opcode,
-    addrmode: AddressingMode,
-    cycles: u8,
+    pub hexcode: u8,
+    pub operate: Opcode,
+    pub addrmode: AddressingMode,
+    pub cycles: u8,
 }
 
-mod opcodes {
+pub mod references {
     use super::{Instruction, Opcode, AddressingMode};
+
+    // 6502 Instruction Lookup Table
+    // This is implemented as a compile time evaluated array, instead of HashMap for better performance.
     pub static INSTRUCTION_LOOKUP: [Instruction; 256] = [
         Instruction { hexcode: 0x00, operate: Opcode::BRK, addrmode: AddressingMode::IMP, cycles: 7 },
         Instruction { hexcode: 0x01, operate: Opcode::ORA, addrmode: AddressingMode::IZX, cycles: 6 },

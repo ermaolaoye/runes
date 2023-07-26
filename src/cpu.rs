@@ -1,8 +1,4 @@
-// Abstraction of the CPU Bus relationship
-pub trait CpuBus {
-    fn read(&self , addr: u16, b_read_only: bool) -> u8;
-    fn write(&mut self, addr: u16, data: u8);
-}
+use crate::opcodes::{references, Opcode};
 
 enum Flags {
     C = (1 << 0), // Carry Bit
@@ -45,7 +41,6 @@ pub struct CPU {
     addr_rel: u16, // Represents absolute address following a branch
     opcode: u8, // Instruction opcode is fetched here
     cycles: u8, // Counts how many cycles the instruction has remaining
-    
 }
     
 impl CPU {
@@ -66,6 +61,36 @@ impl CPU {
             cycles: 0x00,
 
         } 
+    }
+
+    pub fn read(&self, addr: u16, b_read_only: bool) -> u8 {
+        todo!("Implement read");
+    }
+
+    pub fn write(&mut self, addr: u16, data: u8) {
+        todo!("Implement write");
+    }
+
+    pub fn clock(&mut self) {
+        if self.cycles == 0 {
+            self.opcode = self.read(self.program_counter, false);
+            self.program_counter += 1;
+            
+            let operate = &references::INSTRUCTION_LOOKUP[self.opcode as usize].operate;
+            let addressing_mode = &references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode;
+
+            let additional_cycle1: u8 = match operate {
+                _ => panic!("Opcode not implemented"),
+            };
+
+            let additional_cycle2: u8 = match addressing_mode {
+                _ => panic!("Addressing mode not implemented"),
+            };
+
+            self.cycles += additional_cycle1 & additional_cycle2;
+        }
+
+        self.cycles -= 1;
     }
    
 }
