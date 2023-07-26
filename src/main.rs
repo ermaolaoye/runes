@@ -1,3 +1,12 @@
+pub mod cpu;
+pub mod bus;
+pub mod opcodes;
+
+#[macro_use]
+extern crate lazy_static;
+
+use cpu::CPU;
+
 fn main() {
-    println!("Hello, world!");
+    let cpu = CPU::new();
 }
