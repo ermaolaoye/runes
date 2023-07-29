@@ -84,7 +84,18 @@ impl CPU {
             };
 
             let additional_cycle2: u8 = match addressing_mode {
-                _ => panic!("Addressing mode not implemented"),
+                AddressingMode::IMP => self.imp(),
+                AddressingMode::IMM => self.imm(),
+                AddressingMode::ZP0 => self.zp0(),
+                AddressingMode::ZPX => self.zpx(),
+                AddressingMode::ZPY => self.zpy(),
+                AddressingMode::REL => self.rel(),
+                AddressingMode::ABS => self.abs(),
+                AddressingMode::ABX => self.abx(),
+                AddressingMode::ABY => self.aby(),
+                AddressingMode::IND => self.ind(),
+                AddressingMode::IZX => self.izx(),
+                AddressingMode::IZY => self.izy(),
             };
 
             self.cycles += additional_cycle1 & additional_cycle2;
@@ -240,3 +251,4 @@ impl CPU {
         0
     }
 }
+
