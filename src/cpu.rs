@@ -81,7 +81,63 @@ impl CPU {
             let addressing_mode = &references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode;
 
             let additional_cycle1: u8 = match operate {
-                _ => panic!("Opcode not implemented"),
+                Opcode::ADC => self.adc(),
+                Opcode::AND => self.and(),
+                Opcode::ASL => self.asl(),
+                Opcode::BCC => self.bcc(),
+                Opcode::BCS => self.bcs(),
+                Opcode::BEQ => self.beq(),
+                Opcode::BIT => self.bit(),
+                Opcode::BMI => self.bmi(),
+                Opcode::BNE => self.bne(),
+                Opcode::BPL => self.bpl(),
+                Opcode::BRK => self.brk(),
+                Opcode::BVC => self.bvc(),
+                Opcode::BVS => self.bvs(),
+                Opcode::CLC => self.clc(),
+                Opcode::CLD => self.cld(),
+                Opcode::CLI => self.cli(),
+                Opcode::CLV => self.clv(),
+                Opcode::CMP => self.cmp(),
+                Opcode::CPX => self.cpx(),
+                Opcode::CPY => self.cpy(),
+                Opcode::DEC => self.dec(),
+                Opcode::DEX => self.dex(),
+                Opcode::DEY => self.dey(),
+                Opcode::EOR => self.eor(),
+                Opcode::INC => self.inc(),
+                Opcode::INX => self.inx(),
+                Opcode::INY => self.iny(),
+                Opcode::JMP => self.jmp(),
+                Opcode::JSR => self.jsr(),
+                Opcode::LDA => self.lda(),
+                Opcode::LDX => self.ldx(),
+                Opcode::LDY => self.ldy(),
+                Opcode::LSR => self.lsr(),
+                Opcode::NOP => self.nop(),
+                Opcode::ORA => self.ora(),
+                Opcode::PHA => self.pha(),
+                Opcode::PHP => self.php(),
+                Opcode::PLA => self.pla(),
+                Opcode::PLP => self.plp(),
+                Opcode::ROL => self.rol(),
+                Opcode::ROR => self.ror(),
+                Opcode::RTI => self.rti(),
+                Opcode::RTS => self.rts(),
+                Opcode::SBC => self.sbc(),
+                Opcode::SEC => self.sec(),
+                Opcode::SED => self.sed(),
+                Opcode::SEI => self.sei(),
+                Opcode::STA => self.sta(),
+                Opcode::STX => self.stx(),
+                Opcode::STY => self.sty(),
+                Opcode::TAX => self.tax(),
+                Opcode::TAY => self.tay(),
+                Opcode::TSX => self.tsx(),
+                Opcode::TXA => self.txa(),
+                Opcode::TXS => self.txs(),
+                Opcode::TYA => self.tya(),
+                Opcode::XXX => self.xxx(),
             };
 
             let additional_cycle2: u8 = match addressing_mode {
@@ -411,6 +467,53 @@ impl CPU {
         0
     }
 
+    fn jmp(&mut self) -> u8 {
+        self.program_counter = self.addr_abs;
+        0
+    }
+
+    fn jsr(&mut self) -> u8 {
+        self.program_counter -= 1;
+
+        self.write(0x0100 + self.stack_pointer as u16, (self.program_counter >> 8) as u8);
+        self.stack_pointer -= 1;
+        self.write(0x0100 + self.stack_pointer as u16, self.program_counter as u8);
+        self.stack_pointer -= 1;
+
+        self.program_counter = self.addr_abs;
+        0
+    }
+
+    fn lda(&mut self) -> u8 {
+        self.fetch();
+        self.accumulator = self.fetched;
+
+        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
+        self.set_flag(StatusFlag::N, self.accumulator & 0x80 != 0);
+
+        1
+    }
+
+    fn ldx(&mut self) -> u8 {
+        self.fetch();
+        self.x_register = self.fetched;
+
+        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
+        self.set_flag(StatusFlag::N, self.x_register & 0x80 != 0);
+
+        1
+    }
+
+    fn ldy(&mut self) -> u8 {
+        self.fetch();
+        self.y_register = self.fetched;
+
+        self.set_flag(StatusFlag::Z, self.y_register == 0x00);
+        self.set_flag(StatusFlag::N, self.y_register & 0x80 != 0);
+
+        1
+    }
+
     fn clc(&mut self) -> u8 {
         self.set_flag(StatusFlag::C, false);
         0
@@ -428,6 +531,76 @@ impl CPU {
 
     fn clv(&mut self) -> u8 {
         self.set_flag(StatusFlag::V, false);
+        0
+    }
+
+    fn sec(&mut self) -> u8 {
+        self.set_flag(StatusFlag::C, true);
+        0
+    }
+
+    fn sed(&mut self) -> u8 {
+        self.set_flag(StatusFlag::D, true);
+        0
+    }
+
+    fn sei(&mut self) -> u8 {
+        self.set_flag(StatusFlag::I, true);
+        0
+    }
+
+    fn sta(&mut self) -> u8 {
+        self.write(self.addr_abs, self.accumulator);
+        0
+    }
+
+    fn stx(&mut self) -> u8 {
+        self.write(self.addr_abs, self.x_register);
+        0
+    }
+
+    fn sty(&mut self) -> u8 {
+        self.write(self.addr_abs, self.y_register);
+        0
+    }
+
+    fn tax(&mut self) -> u8 {
+        self.x_register = self.accumulator;
+        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
+        0
+    }
+
+    fn tay(&mut self) -> u8 {
+        self.y_register = self.accumulator;
+        self.set_flag(StatusFlag::Z, self.y_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.y_register & 0x80) != 0);
+        0
+    }
+
+    fn tsx(&mut self) -> u8 {
+        self.x_register = self.stack_pointer;
+        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
+        0
+    }
+
+    fn txa(&mut self) -> u8 {
+        self.accumulator = self.x_register;
+        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
+        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
+        0
+    }
+
+    fn txs(&mut self) -> u8 {
+        self.stack_pointer = self.x_register;
+        0
+    }
+
+    fn tya(&mut self) -> u8 {
+        self.accumulator = self.y_register;
+        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
+        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
         0
     }
 
@@ -454,8 +627,170 @@ impl CPU {
         1
     }
 
+    fn asl(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = (self.fetched as u16) << 1;
+        self.set_flag(StatusFlag::C, (temp & 0xFF00) > 0);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x00);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        if references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode == AddressingMode::IMP {
+            self.accumulator = temp as u8;
+        } else {
+            self.write(self.addr_abs, temp as u8);
+        }
+        0
+    }
+
+    fn lsr(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = (self.fetched as u16) >> 1;
+        self.set_flag(StatusFlag::C, (temp & 0x0001) != 0);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        if references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode == AddressingMode::IMP {
+            self.accumulator = temp as u8;
+        } else {
+            self.write(self.addr_abs, temp as u8);
+        }
+        0
+    }
+
+    fn rol(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = (self.fetched as u16) << 1 | self.get_flag(StatusFlag::C) as u16;
+        self.set_flag(StatusFlag::C, (temp & 0xFF00) != 0);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        if references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode == AddressingMode::IMP {
+            self.accumulator = temp as u8;
+        } else {
+            self.write(self.addr_abs, temp as u8);
+        }
+        0
+    }
+
+    fn ror(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = (self.get_flag(StatusFlag::C) as u16) << 7 | (self.fetched as u16) >> 1;
+        self.set_flag(StatusFlag::C, (self.fetched & 0x01) != 0);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        if references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode == AddressingMode::IMP {
+            self.accumulator = temp as u8;
+        } else {
+            self.write(self.addr_abs, temp as u8);
+        }
+        0
+    }
+
+    fn cmp(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.accumulator as u16 - self.fetched as u16;
+        self.set_flag(StatusFlag::C, self.accumulator >= self.fetched);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        1
+    }
+
+    fn cpx(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.x_register as u16 - self.fetched as u16;
+        self.set_flag(StatusFlag::C, self.x_register >= self.fetched);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        0
+    }
+
+    fn cpy(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.y_register as u16 - self.fetched as u16;
+        self.set_flag(StatusFlag::C, self.y_register >= self.fetched);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        0
+    }
+
+    fn inc(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.fetched as u16 + 1;
+        self.write(self.addr_abs, temp as u8);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        0
+    }
+
+    fn inx(&mut self) -> u8 {
+        self.x_register = self.x_register.wrapping_add(1);
+        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
+        0
+    }
+
+    fn iny(&mut self) -> u8 {
+        self.y_register = self.y_register.wrapping_add(1);
+        self.set_flag(StatusFlag::Z, self.y_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.y_register & 0x80) != 0);
+        0
+    }
+
+    fn dec(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.fetched as u16 - 1;
+        self.write(self.addr_abs, temp as u8);
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (temp & 0x0080) != 0);
+        0
+    }
+
+    fn dex(&mut self) -> u8 {
+        self.x_register = self.x_register.wrapping_sub(1);
+        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
+        0
+    }
+
+    fn dey(&mut self) -> u8 {
+        self.y_register = self.y_register.wrapping_sub(1);
+        self.set_flag(StatusFlag::Z, self.y_register == 0x00);
+        self.set_flag(StatusFlag::N, (self.y_register & 0x80) != 0);
+        0
+    }
+
+    fn eor(&mut self) -> u8 {
+        self.fetch();
+        self.accumulator = self.accumulator ^ self.fetched;
+        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
+        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
+        1
+    }
+
+    fn ora(&mut self) -> u8 {
+        self.fetch();
+        self.accumulator = self.accumulator | self.fetched;
+        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
+        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
+        1
+    }
+
+    fn bit(&mut self) -> u8 {
+        self.fetch();
+        let temp: u16 = self.accumulator as u16 & self.fetched as u16;
+        self.set_flag(StatusFlag::Z, (temp & 0x00FF) == 0x0000);
+        self.set_flag(StatusFlag::N, (self.fetched & (1 << 7)) != 0);
+        self.set_flag(StatusFlag::V, (self.fetched & (1 << 6)) != 0);
+        0
+    }
+
     fn pha(&mut self) -> u8 {
         self.write(0x0100 + self.stack_pointer as u16, self.accumulator);
+        self.stack_pointer -= 1;
+        0
+    }
+
+    fn php(&mut self) -> u8 {
+        self.write(0x0100 + self.stack_pointer as u16, self.status | StatusFlag::B as u8 | StatusFlag::U as u8);
+        self.set_flag(StatusFlag::B, false);
+        self.set_flag(StatusFlag::U, false);
         self.stack_pointer -= 1;
         0
     }
@@ -465,6 +800,13 @@ impl CPU {
         self.accumulator = self.read(0x0100 + self.stack_pointer as u16, false);
         self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
         self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
+        0
+    }
+
+    fn plp(&mut self) -> u8 {
+        self.stack_pointer += 1;
+        self.status = self.read(0x0100 + self.stack_pointer as u16, false);
+        self.set_flag(StatusFlag::U, true);
         0
     }
 
@@ -539,74 +881,37 @@ impl CPU {
         0
     }
 
-    fn sec(&mut self) -> u8 {
-        self.set_flag(StatusFlag::C, true);
-        0
-    }
+    fn brk(&mut self) -> u8 {
+        self.program_counter += 1;
 
-    fn sed(&mut self) -> u8 {
-        self.set_flag(StatusFlag::D, true);
-        0
-    }
-
-    fn sei(&mut self) -> u8 {
         self.set_flag(StatusFlag::I, true);
+        self.write(0x0100 + self.stack_pointer as u16, ((self.program_counter >> 8) & 0x00FF) as u8);
+        self.stack_pointer -= 1;
+        self.write(0x0100 + self.stack_pointer as u16, (self.program_counter & 0x00FF) as u8);
+        self.stack_pointer -= 1;
+
+        self.set_flag(StatusFlag::B, true);
+        self.write(0x0100 + self.stack_pointer as u16, self.status);
+        self.stack_pointer -= 1;
+        self.set_flag(StatusFlag::B, false);
+
+        self.addr_abs = 0xFFFE;
+        let lo = self.read(self.addr_abs, false) as u16;
+        let hi = self.read(self.addr_abs + 1, false) as u16;
+        self.program_counter = (hi << 8) | lo;
+
         0
     }
 
-    fn sta(&mut self) -> u8 {
-        self.write(self.addr_abs, self.accumulator);
-        0
-    }
-
-    fn stx(&mut self) -> u8 {
-        self.write(self.addr_abs, self.x_register);
-        0
-    }
-
-    fn sty(&mut self) -> u8 {
-        self.write(self.addr_abs, self.y_register);
-        0
-    }
-
-    fn tax(&mut self) -> u8 {
-        self.x_register = self.accumulator;
-        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
-        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
-        0
-    }
-
-    fn tay(&mut self) -> u8 {
-        self.y_register = self.accumulator;
-        self.set_flag(StatusFlag::Z, self.y_register == 0x00);
-        self.set_flag(StatusFlag::N, (self.y_register & 0x80) != 0);
-        0
-    }
-
-    fn tsx(&mut self) -> u8 {
-        self.x_register = self.stack_pointer;
-        self.set_flag(StatusFlag::Z, self.x_register == 0x00);
-        self.set_flag(StatusFlag::N, (self.x_register & 0x80) != 0);
-        0
-    }
-
-    fn txa(&mut self) -> u8 {
-        self.accumulator = self.x_register;
-        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
-        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
-        0
-    }
-
-    fn txs(&mut self) -> u8 {
-        self.stack_pointer = self.x_register;
-        0
-    }
-
-    fn tya(&mut self) -> u8 {
-        self.accumulator = self.y_register;
-        self.set_flag(StatusFlag::Z, self.accumulator == 0x00);
-        self.set_flag(StatusFlag::N, (self.accumulator & 0x80) != 0);
-        0
+    fn nop(&mut self) -> u8 {
+        // nop is a special case because it doesn't do anything
+        // it's just a placeholder for the CPU to do nothing
+        // so we don't need to do anything here
+        // but we do need to return the number of cycles
+        match self.opcode {
+            0x1C | 0x3C | 0x5C | 0x7C | 0xDC | 0xFC => 1,
+            _ => 0,
+        }
     }
 
     fn xxx(&mut self) -> u8 {
