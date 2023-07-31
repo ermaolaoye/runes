@@ -1,4 +1,5 @@
 use crate::opcodes::{references, Opcode};
+use crate::bus::Bus;
 
 enum StatusFlag {
     C = (1 << 0), // Carry Bit
@@ -42,6 +43,8 @@ pub struct CPU {
     addr_rel: u16, // Represents absolute address following a branch
     opcode: u8, // Instruction opcode is fetched here
     cycles: u8, // Counts how many cycles the instruction has remaining
+    
+    bus: Bus,
 }
     
 impl CPU {
@@ -61,15 +64,16 @@ impl CPU {
             opcode: 0x00,
             cycles: 0x00,
 
+            bus: Bus::new(),
         } 
     }
 
     pub fn read(&self, addr: u16, b_read_only: bool) -> u8 {
-        todo!("Implement read");
+        self.bus.mem_read(addr)
     }
 
     pub fn write(&mut self, addr: u16, data: u8) {
-        todo!("Implement write");
+        self.bus.mem_write(addr, data);
     }
 
     pub fn clock(&mut self) {
