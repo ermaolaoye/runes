@@ -16,7 +16,7 @@ pub fn ui(cpu: Box<CPU>) -> Result<(), eframe::Error> {
 }
 
 struct RunesContext {
-    cpu_vram: [u8; 2048],
+    cpu: Box<CPU>,
     page: u16,
 }
 
@@ -55,7 +55,7 @@ impl RunesContext {
                 ui.separator();
                 for i in 0..16 {
                     // format as hex
-                    ui.label(format!("{:02X}", self.cpu_vram[(self.page << 8 | addr << 4 | i) as usize]));
+                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page << 8 | addr << 4 | i) as usize]));
                 }
             });
         }
@@ -71,38 +71,24 @@ struct RunesApp {
     tree: Tree<String>
 }
 
-impl Default for RunesApp {
-    fn default() -> Self {
+
+impl RunesApp {
+    fn new(cpu: Box<CPU>) -> Self {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
-
-
-        let context = RunesContext {
-            cpu_vram: [0; 2048],
-            page: 0,
-        };
-
         tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+
         Self {
-            context,
+            context: RunesContext {
+                cpu,
+                page: 0,
+            },
             tree
         }
     }
 }
 
-impl RunesApp {
-    fn new(cpu: Box<CPU>) -> Self {
-        Self {
-            context: RunesContext {
-                cpu_vram: cpu.bus.cpu_vram,
-                page: 0,
-            },
-            ..Default::default()
-        }
-    }
-}
-
-impl eframe::App for RunesApp {
+impl eframe::App for RunesApp { 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
