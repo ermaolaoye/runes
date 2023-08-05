@@ -44,7 +44,7 @@ pub struct CPU {
     opcode: u8, // Instruction opcode is fetched here
     cycles: u8, // Counts how many cycles the instruction has remaining
     
-    bus: Bus,
+    pub bus: Bus,
 }
     
 impl CPU {
