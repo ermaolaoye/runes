@@ -27,6 +27,7 @@ impl egui_dock::TabViewer for RunesContext {
         match tab.as_str() {
             "CPU Memory Inspector" => self.cpu_memory_inspector(ui),
             "Game" => self.game(ui),
+            "CPU Register Inspector" => self.cpu_register_inspector(ui),
             _ => {}
         }
     }
@@ -61,6 +62,41 @@ impl RunesContext {
         }
     }
 
+    fn cpu_register_inspector(&mut self, ui: &mut egui::Ui) {
+        ui.label("CPU Register Inspector");
+
+        ui.horizontal(|ui| {
+            ui.label("A: ");
+            ui.label(format!("{:02X}", self.cpu.accumulator));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("X: ");
+            ui.label(format!("{:02X}", self.cpu.x_register));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Y: ");
+            ui.label(format!("{:02X}", self.cpu.y_register));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("PC: ");
+            ui.label(format!("{:04X}", self.cpu.program_counter));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("SP: ");
+            ui.label(format!("{:02X}", self.cpu.stack_pointer));
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Status: ");
+            ui.label(format!("{:08b}", self.cpu.status));
+        });
+
+    }
+
     fn game(&mut self, ui: &mut egui::Ui) {
         ui.label("Game");
     }
@@ -76,7 +112,8 @@ impl RunesApp {
     fn new(cpu: Box<CPU>) -> Self {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
-        tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+        let [cpu_register_inspector_node_index, _] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+        tree.split_below(cpu_register_inspector_node_index, 0.8, vec!["CPU Register Inspector".to_owned()]);
 
         Self {
             context: RunesContext {
