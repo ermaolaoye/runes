@@ -63,7 +63,8 @@ impl RunesContext {
     }
 
     fn cpu_register_inspector(&mut self, ui: &mut egui::Ui) {
-        ui.label("CPU Register Inspector");
+        // change style to monospace
+        ui.style_mut().override_text_style = Some(egui::TextStyle::Monospace);
 
         ui.horizontal(|ui| {
             ui.label("A: ");
@@ -112,8 +113,8 @@ impl RunesApp {
     fn new(cpu: Box<CPU>) -> Self {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
-        let [cpu_register_inspector_node_index, _] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
-        tree.split_below(cpu_register_inspector_node_index, 0.8, vec!["CPU Register Inspector".to_owned()]);
+        let [_ , cpu_register_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+        tree.split_below(cpu_register_inspector_node_index, 0.85, vec!["CPU Register Inspector".to_owned()]);
 
         Self {
             context: RunesContext {
