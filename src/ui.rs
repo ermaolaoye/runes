@@ -79,12 +79,12 @@ impl RunesContext {
 
         for addr in 0..=15 {
             ui.horizontal(|ui| {
-                ui.label(format!("{:02X}{:2X}0", self.page_cpu, addr));
+                ui.label(format!("{:02X}{:2X}0", self.page_rom, addr));
                 ui.separator();
                 for i in 0..=15 {
                     // format as hex
                     // only print when read from page 8000 ~ 8010
-                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page_cpu << 8 | addr << 4 | i) as usize]));
+                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page_rom << 8 | addr << 4 | i) as usize]));
                 }
             });
         }
