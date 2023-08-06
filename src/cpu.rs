@@ -86,7 +86,23 @@ impl CPU {
 
             self.cycles = references::INSTRUCTION_LOOKUP[self.opcode as usize].cycles;
 
-            let additional_cycle1: u8 = match operate {
+
+            let additional_cycle1: u8 = match addressing_mode {
+                AddressingMode::IMP => self.imp(),
+                AddressingMode::IMM => self.imm(),
+                AddressingMode::ZP0 => self.zp0(),
+                AddressingMode::ZPX => self.zpx(),
+                AddressingMode::ZPY => self.zpy(),
+                AddressingMode::REL => self.rel(),
+                AddressingMode::ABS => self.abs(),
+                AddressingMode::ABX => self.abx(),
+                AddressingMode::ABY => self.aby(),
+                AddressingMode::IND => self.ind(),
+                AddressingMode::IZX => self.izx(),
+                AddressingMode::IZY => self.izy(),
+            };
+            
+            let additional_cycle2: u8 = match operate {
                 Opcode::ADC => self.adc(),
                 Opcode::AND => self.and(),
                 Opcode::ASL => self.asl(),
@@ -146,26 +162,10 @@ impl CPU {
                 Opcode::XXX => self.xxx(),
             };
 
-            let additional_cycle2: u8 = match addressing_mode {
-                AddressingMode::IMP => self.imp(),
-                AddressingMode::IMM => self.imm(),
-                AddressingMode::ZP0 => self.zp0(),
-                AddressingMode::ZPX => self.zpx(),
-                AddressingMode::ZPY => self.zpy(),
-                AddressingMode::REL => self.rel(),
-                AddressingMode::ABS => self.abs(),
-                AddressingMode::ABX => self.abx(),
-                AddressingMode::ABY => self.aby(),
-                AddressingMode::IND => self.ind(),
-                AddressingMode::IZX => self.izx(),
-                AddressingMode::IZY => self.izy(),
-            };
 
             self.cycles += additional_cycle1 & additional_cycle2;
 
             self.set_flag(StatusFlag::U, true);
-
-            print!("after load self.cycles = {}\n", self.cycles);
         }
 
         self.cycles -= 1;

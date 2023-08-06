@@ -102,7 +102,7 @@ impl RunesContext {
 
     fn cpu_debug_inspector(&mut self, ui: &mut egui::Ui) {
         ui.label("CPU Debug Inspector");
-        ui.label(format!("Opcode: {:?}", self.cpu.opcode));
+        ui.label(format!("Opcode: {:2X}", self.cpu.opcode));
         ui.label(format!("Cycles: {:?}", self.cpu.cycles));
 
     }
