@@ -29,13 +29,13 @@ pub enum AddressingMode {
 }
 
 pub struct CPU {
-    accumulator: u8, // Accumulator Register
-    x_register: u8, // X Register
-    y_register: u8, // Y Register
-    stack_pointer: u8, // Stack Pointer (points to location on bus)
-    program_counter: u16, // Program Counter
+    pub accumulator: u8, // Accumulator Register
+    pub x_register: u8, // X Register
+    pub y_register: u8, // Y Register
+    pub stack_pointer: u8, // Stack Pointer (points to location on bus)
+    pub program_counter: u16, // Program Counter
 
-    status: u8,
+    pub status: u8,
 
     fetched: u8, // Represents the working input value to the ALU
 
@@ -44,7 +44,7 @@ pub struct CPU {
     opcode: u8, // Instruction opcode is fetched here
     cycles: u8, // Counts how many cycles the instruction has remaining
     
-    bus: Bus,
+    pub bus: Bus,
 }
     
 impl CPU {

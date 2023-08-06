@@ -5,7 +5,7 @@ const PPU_REGISTERS: u16 = 0x2000;
 const PPU_REGISTERS_MIRRORS_END: u16 = 0x3FFF;
 
 pub struct Bus {
-    cpu_vram: [u8; 2048],
+    pub cpu_vram: [u8; 2048],
 }
 
 impl Bus {
