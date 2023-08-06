@@ -420,9 +420,7 @@ impl CPU {
     fn bne(&mut self) -> u8 {
         if self.get_flag(StatusFlag::Z) == 0 {
             self.cycles += 1;
-            self.addr_abs = self.program_counter + self.addr_rel;
-            println!("addr_abs: {:X}", self.addr_abs);
-
+            self.addr_abs = self.program_counter.wrapping_add(self.addr_rel);
 
             // If the branch crosses a page boundary, an additional cycle is required
             if (self.addr_abs & 0xFF00) != (self.program_counter & 0xFF00) {
