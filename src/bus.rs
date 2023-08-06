@@ -5,13 +5,13 @@ const PPU_REGISTERS: u16 = 0x2000;
 const PPU_REGISTERS_MIRRORS_END: u16 = 0x3FFF;
 
 pub struct Bus {
-    pub cpu_vram: [u8; 0xFFFF],
+    pub cpu_vram: [u8; 65536],
 }
 
 impl Bus {
     pub fn new() -> Bus {
         Bus {
-            cpu_vram: [0; 0xFFFF],
+            cpu_vram: [0; 65536],
         }
     }
 }
