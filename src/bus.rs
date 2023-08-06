@@ -5,13 +5,13 @@ const PPU_REGISTERS: u16 = 0x2000;
 const PPU_REGISTERS_MIRRORS_END: u16 = 0x3FFF;
 
 pub struct Bus {
-    pub cpu_vram: [u8; 2048],
+    pub cpu_vram: [u8; 0xFFFF],
 }
 
 impl Bus {
     pub fn new() -> Bus {
         Bus {
-            cpu_vram: [0; 2048],
+            cpu_vram: [0; 0xFFFF],
         }
     }
 }
@@ -29,13 +29,13 @@ impl Bus {
             },
 
             _ => {
-                println!("Unmapped memory address: {:#X}", addr);
-                0
+                self.cpu_vram[addr as usize]
+                // println!("Unmapped memory address: {:#X}", addr);
             }
 
         }
     }
-    
+
     pub fn mem_write(&mut self, addr: u16, data: u8) {
         match addr {
             RAM..=RAM_MIRRORS_END => {
@@ -48,7 +48,8 @@ impl Bus {
             },
 
             _ => {
-                println!("Unmapped memory address: {:#X}", addr);
+                self.cpu_vram[addr as usize] = data;
+                // println!("Unmapped memory address: {:#X}", addr);
             }
 
         }

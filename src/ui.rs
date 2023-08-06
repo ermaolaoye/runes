@@ -2,7 +2,7 @@ use eframe::egui;
 use crate::cpu::CPU;
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
 
-pub fn ui(cpu: Box<CPU>) -> Result<(), eframe::Error> {
+pub fn ui(cpu: CPU) -> Result<(), eframe::Error> {
     env_logger::init();
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::Vec2::new(1920.0, 1080.0)),
@@ -16,7 +16,7 @@ pub fn ui(cpu: Box<CPU>) -> Result<(), eframe::Error> {
 }
 
 struct RunesContext {
-    cpu: Box<CPU>,
+    cpu: CPU,
     page: u16,
 }
 
@@ -28,6 +28,7 @@ impl egui_dock::TabViewer for RunesContext {
             "CPU Memory Inspector" => self.cpu_memory_inspector(ui),
             "Game" => self.game(ui),
             "CPU Register Inspector" => self.cpu_register_inspector(ui),
+            "CPU Debug Inspector" => self.cpu_debug_inspector(ui),
             _ => {}
         }
     }
@@ -47,15 +48,16 @@ impl RunesContext {
         // page selector
         ui.horizontal(|ui| {
             ui.label("Page: ");
-            ui.add(egui::DragValue::new(&mut self.page).speed(1.0).clamp_range(0..=7));
+            ui.add(egui::DragValue::new(&mut self.page).speed(1.0).clamp_range(0..=0xFE));
         });
 
         for addr in 0..=15 {
             ui.horizontal(|ui| {
                 ui.label(format!("{:02X}{:2X}0", self.page, addr));
                 ui.separator();
-                for i in 0..16 {
+                for i in 0..=15 {
                     // format as hex
+                    // only print when read from page 8000 ~ 8010
                     ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page << 8 | addr << 4 | i) as usize]));
                 }
             });
@@ -98,6 +100,13 @@ impl RunesContext {
 
     }
 
+    fn cpu_debug_inspector(&mut self, ui: &mut egui::Ui) {
+        ui.label("CPU Debug Inspector");
+        ui.label(format!("Opcode: {:?}", self.cpu.opcode));
+        ui.label(format!("Cycles: {:?}", self.cpu.cycles));
+
+    }
+
     fn game(&mut self, ui: &mut egui::Ui) {
         ui.label("Game");
     }
@@ -110,11 +119,39 @@ struct RunesApp {
 
 
 impl RunesApp {
-    fn new(cpu: Box<CPU>) -> Self {
+    fn new(mut cpu: CPU) -> Self {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
-        let [_ , cpu_register_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
-        tree.split_below(cpu_register_inspector_node_index, 0.85, vec!["CPU Register Inspector".to_owned()]);
+        let [_ , cpu_memory_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+        let [_ , cpu_register_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.85, vec!["CPU Register Inspector".to_owned()]);
+        tree.split_right(cpu_register_inspector_node_index, 0.5, vec!["CPU Debug Inspector".to_owned()]);
+
+        print!("initializing cpu...");
+
+        // test code and cpu init
+        let test_code = vec![
+            0xA2, 0x0A,
+            0x8E, 0x00, 0x00,
+            0xA2, 0x03,
+            0x8E, 0x01, 0x00,
+            0xAC, 0x00, 0x00,
+            0xA9, 0x00,
+            0x18, 0x6D, 0x01, 0x00,
+            0x88, 0xD0, 0xFA,
+            0x8D, 0x02, 0x00,
+            0xEA, 0xEA, 0xEA
+        ];
+
+        for (i, byte) in test_code.iter().enumerate() {
+            cpu.bus.mem_write((0x8000 + i) as u16, *byte as u8);
+        }
+
+        cpu.bus.mem_write(0xFFFC, 0x00);
+        cpu.bus.mem_write(0xFFFD, 0x80);
+
+        cpu.reset();
+
+        println!("done");
 
         Self {
             context: RunesContext {
@@ -131,6 +168,13 @@ impl eframe::App for RunesApp {
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.context);
+
+        if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
+            self.context.cpu.clock();
+        }
+
+        if ctx.input(|i| i.key_pressed(egui::Key::R)) {
+        }
     }
 }
 

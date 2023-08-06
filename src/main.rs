@@ -8,6 +8,6 @@ use ui::ui;
 
 use std::boxed::Box;
 fn main() {
-    let cpu =  Box::new(CPU::new());
+    let cpu = CPU::new();
     ui(cpu).unwrap();
 }

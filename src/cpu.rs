@@ -12,7 +12,7 @@ enum StatusFlag {
     N = (1 << 7), // Negative
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum AddressingMode {
     IMP, // Implied
     IMM, // Immediate
@@ -39,10 +39,10 @@ pub struct CPU {
 
     fetched: u8, // Represents the working input value to the ALU
 
-    addr_abs: u16, // All used memory addresses end up in here
-    addr_rel: u16, // Represents absolute address following a branch
-    opcode: u8, // Instruction opcode is fetched here
-    cycles: u8, // Counts how many cycles the instruction has remaining
+    pub addr_abs: u16, // All used memory addresses end up in here
+    pub addr_rel: u16, // Represents absolute address following a branch
+    pub opcode: u8, // Instruction opcode is fetched here
+    pub cycles: u8, // Counts how many cycles the instruction has remaining
     
     pub bus: Bus,
 }
@@ -83,6 +83,8 @@ impl CPU {
             
             let operate = &references::INSTRUCTION_LOOKUP[self.opcode as usize].operate;
             let addressing_mode = &references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode;
+
+            self.cycles = references::INSTRUCTION_LOOKUP[self.opcode as usize].cycles;
 
             let additional_cycle1: u8 = match operate {
                 Opcode::ADC => self.adc(),
@@ -160,6 +162,10 @@ impl CPU {
             };
 
             self.cycles += additional_cycle1 & additional_cycle2;
+
+            self.set_flag(StatusFlag::U, true);
+
+            print!("after load self.cycles = {}\n", self.cycles);
         }
 
         self.cycles -= 1;
@@ -922,11 +928,11 @@ impl CPU {
         0
     }
     
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.addr_abs = 0xFFFC;
         let lo = self.read(self.addr_abs, false) as u16;
         let hi = self.read(self.addr_abs + 1, false) as u16;
-        self.program_counter = (hi << 8) | lo;
+        self.program_counter = 0x8000;
         
         self.accumulator = 0;
         self.x_register = 0;
@@ -939,6 +945,10 @@ impl CPU {
         self.fetched = 0x00;
 
         self.cycles = 8;
+    }
+
+    pub fn complete(&mut self) -> bool {
+        self.cycles == 0
     }
 
 

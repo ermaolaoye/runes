@@ -1,5 +1,6 @@
 use crate::cpu::AddressingMode;
 
+#[derive(Debug)]
 pub enum Opcode {
     ADC, // Add with Carry
     AND, // Logical AND
