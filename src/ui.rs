@@ -51,7 +51,7 @@ impl RunesContext {
         // page selector
         ui.horizontal(|ui| {
             ui.label("Page: ");
-            ui.add(egui::DragValue::new(&mut self.page_cpu).speed(1.0).clamp_range(0..=0xFE));
+            ui.add(egui::DragValue::new(&mut self.page_cpu).speed(1.0).clamp_range(0..=0xFF));
         });
 
         for addr in 0..=15 {
@@ -74,7 +74,7 @@ impl RunesContext {
         // page selector
         ui.horizontal(|ui| {
             ui.label("Page: ");
-            ui.add(egui::DragValue::new(&mut self.page_rom).speed(1.0).clamp_range(0x80..=0xFE));
+            ui.add(egui::DragValue::new(&mut self.page_rom).speed(1.0).clamp_range(0x80..=0xFF));
         });
 
         for addr in 0..=15 {
