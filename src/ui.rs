@@ -1,6 +1,7 @@
 use eframe::egui;
 use crate::cpu::CPU;
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use crate::opcodes::references;
 
 pub fn ui(cpu: CPU) -> Result<(), eframe::Error> {
     env_logger::init();
@@ -102,7 +103,7 @@ impl RunesContext {
 
     fn cpu_debug_inspector(&mut self, ui: &mut egui::Ui) {
         ui.label("CPU Debug Inspector");
-        ui.label(format!("Opcode: {:2X}", self.cpu.opcode));
+        ui.label(format!("Opcode {}", references::INSTRUCTION_LOOKUP[self.cpu.opcode as usize]));       
         ui.label(format!("Cycles: {:?}", self.cpu.cycles));
 
     }
@@ -170,7 +171,12 @@ impl eframe::App for RunesApp {
             .show(ctx, &mut self.context);
 
         if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
-            self.context.cpu.clock();
+            loop {
+                self.context.cpu.clock();
+                if self.context.cpu.complete() {
+                    break;
+                }
+            }
         }
 
         if ctx.input(|i| i.key_pressed(egui::Key::R)) {

@@ -182,8 +182,12 @@ impl CPU {
         }
     }
 
-    fn get_flag(&self, flag: StatusFlag) -> bool {
-        (self.status & (flag as u8)) > 0
+    fn get_flag(&self, flag: StatusFlag) -> u8 {
+        if (self.status & (flag as u8)) > 0 {
+            1
+        } else {
+            0
+        }
     }
 
     // Addressing Modes
@@ -350,7 +354,7 @@ impl CPU {
 
 
     fn bcs(&mut self) -> u8 {
-        if self.get_flag(StatusFlag::C) {
+        if self.get_flag(StatusFlag::C) == 1 {
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -366,7 +370,7 @@ impl CPU {
     }
 
     fn bcc(&mut self) -> u8 {
-        if !self.get_flag(StatusFlag::C) {
+        if self.get_flag(StatusFlag::C) == 0{
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -382,7 +386,7 @@ impl CPU {
     }
 
     fn beq(&mut self) -> u8 {
-        if self.get_flag(StatusFlag::Z) {
+        if self.get_flag(StatusFlag::Z) == 1 {
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -398,7 +402,7 @@ impl CPU {
     }
 
     fn bmi(&mut self) -> u8 {
-        if self.get_flag(StatusFlag::N) {
+        if self.get_flag(StatusFlag::N) == 1{
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -414,9 +418,11 @@ impl CPU {
     }
 
     fn bne(&mut self) -> u8 {
-        if !self.get_flag(StatusFlag::Z) {
+        if self.get_flag(StatusFlag::Z) == 0 {
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
+            println!("addr_abs: {:X}", self.addr_abs);
+
 
             // If the branch crosses a page boundary, an additional cycle is required
             if (self.addr_abs & 0xFF00) != (self.program_counter & 0xFF00) {
@@ -430,7 +436,7 @@ impl CPU {
     }
 
     fn bpl(&mut self) -> u8 {
-        if !self.get_flag(StatusFlag::N) {
+        if self.get_flag(StatusFlag::N) == 0{
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -446,7 +452,7 @@ impl CPU {
     }
 
     fn bvc(&mut self) -> u8 {
-        if !self.get_flag(StatusFlag::V) {
+        if self.get_flag(StatusFlag::V) == 0{
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -462,7 +468,7 @@ impl CPU {
     }
 
     fn bvs(&mut self) -> u8 {
-        if self.get_flag(StatusFlag::V) {
+        if self.get_flag(StatusFlag::V) == 1{
             self.cycles += 1;
             self.addr_abs = self.program_counter + self.addr_rel;
 
@@ -821,7 +827,7 @@ impl CPU {
     }
 
     fn irq(&mut self) -> u8 {
-        if !self.get_flag(StatusFlag::I) {
+        if self.get_flag(StatusFlag::I) == 0 {
             self.write(0x0100 + self.stack_pointer as u16, ((self.program_counter >> 8) & 0x00FF) as u8);
             self.stack_pointer -= 1;
             self.write(0x0100 + self.stack_pointer as u16, (self.program_counter & 0x00FF) as u8);

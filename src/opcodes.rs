@@ -1,4 +1,5 @@
 use crate::cpu::AddressingMode;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum Opcode {
@@ -63,12 +64,20 @@ pub enum Opcode {
     // Unofficial Opcodes are not implemented in this project (yet).
 }
 
+#[derive(Debug)]
 pub struct Instruction {
     pub hexcode: u8,
     pub operate: Opcode,
     pub addrmode: AddressingMode,
     pub cycles: u8,
 }
+
+impl fmt::Display for Instruction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:02X} {:?} {:?} {:02X}", self.hexcode, self.operate, self.addrmode, self.cycles)
+    }
+}
+
 
 pub mod references {
     use super::{Instruction, Opcode, AddressingMode};
