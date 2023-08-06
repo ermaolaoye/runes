@@ -18,7 +18,8 @@ pub fn ui(cpu: CPU) -> Result<(), eframe::Error> {
 
 struct RunesContext {
     cpu: CPU,
-    page: u16,
+    page_cpu: u16,
+    page_rom: u16,
 }
 
 impl egui_dock::TabViewer for RunesContext {
@@ -30,6 +31,7 @@ impl egui_dock::TabViewer for RunesContext {
             "Game" => self.game(ui),
             "CPU Register Inspector" => self.cpu_register_inspector(ui),
             "CPU Debug Inspector" => self.cpu_debug_inspector(ui),
+            "ROM Memory Inspector" => self.rom_memory_inspector(ui),
             _ => {}
         }
     }
@@ -49,17 +51,40 @@ impl RunesContext {
         // page selector
         ui.horizontal(|ui| {
             ui.label("Page: ");
-            ui.add(egui::DragValue::new(&mut self.page).speed(1.0).clamp_range(0..=0xFE));
+            ui.add(egui::DragValue::new(&mut self.page_cpu).speed(1.0).clamp_range(0..=0xFE));
         });
 
         for addr in 0..=15 {
             ui.horizontal(|ui| {
-                ui.label(format!("{:02X}{:2X}0", self.page, addr));
+                ui.label(format!("{:02X}{:2X}0", self.page_cpu, addr));
                 ui.separator();
                 for i in 0..=15 {
                     // format as hex
                     // only print when read from page 8000 ~ 8010
-                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page << 8 | addr << 4 | i) as usize]));
+                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page_cpu << 8 | addr << 4 | i) as usize]));
+                }
+            });
+        }
+    }
+
+    fn rom_memory_inspector(&mut self, ui: &mut egui::Ui) {
+        // change style to monospace
+        ui.style_mut().override_text_style = Some(egui::TextStyle::Monospace);
+
+        // page selector
+        ui.horizontal(|ui| {
+            ui.label("Page: ");
+            ui.add(egui::DragValue::new(&mut self.page_rom).speed(1.0).clamp_range(0x80..=0xFE));
+        });
+
+        for addr in 0..=15 {
+            ui.horizontal(|ui| {
+                ui.label(format!("{:02X}{:2X}0", self.page_cpu, addr));
+                ui.separator();
+                for i in 0..=15 {
+                    // format as hex
+                    // only print when read from page 8000 ~ 8010
+                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page_cpu << 8 | addr << 4 | i) as usize]));
                 }
             });
         }
@@ -124,7 +149,8 @@ impl RunesApp {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
         let [_ , cpu_memory_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
-        let [_ , cpu_register_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.85, vec!["CPU Register Inspector".to_owned()]);
+        let [_ , rom_memory_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.38, vec!["ROM Memory Inspector".to_owned()]);
+        let [_ , cpu_register_inspector_node_index] = tree.split_below(rom_memory_inspector_node_index, 0.7, vec!["CPU Register Inspector".to_owned()]);
         tree.split_right(cpu_register_inspector_node_index, 0.5, vec!["CPU Debug Inspector".to_owned()]);
 
         print!("initializing cpu...");
@@ -157,7 +183,8 @@ impl RunesApp {
         Self {
             context: RunesContext {
                 cpu,
-                page: 0,
+                page_cpu: 0,
+                page_rom: 0x80
             },
             tree
         }
