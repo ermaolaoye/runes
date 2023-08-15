@@ -34,7 +34,8 @@ impl Bus {
             },
 
             0x8000..=0xFFFF => {
-                0
+                println!("Reading from ROM");
+                self.read_prg_rom(addr)
             },
 
             _ => {
@@ -56,10 +57,25 @@ impl Bus {
                 todo!("PPU")
             },
 
+            0x8000..=0xFFFF => {
+                panic!("Cannot write to ROM");
+            },
+
             _ => {
                 println!("Unmapped memory address: {:#X}", addr);
             }
 
         }
     }
+
+    pub fn read_prg_rom(&self, mut addr: u16) -> u8 {
+        addr -= 0x8000;
+        if self.cartridge.prg_rom.len() == 0x4000 && addr >= 0x4000 {
+            // Mirror
+            addr -= 0x4000;
+        }
+
+        self.cartridge.prg_rom[addr as usize]
+    }
+
 }

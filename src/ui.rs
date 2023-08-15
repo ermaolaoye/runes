@@ -51,7 +51,7 @@ impl RunesContext {
         // page selector
         ui.horizontal(|ui| {
             ui.label("Page: ");
-            ui.add(egui::DragValue::new(&mut self.page_cpu).speed(1.0).clamp_range(0..=0xFF));
+            ui.add(egui::DragValue::new(&mut self.page_cpu).speed(1.0).clamp_range(0..=0x07));
         });
 
         for addr in 0..=15 {
@@ -84,7 +84,7 @@ impl RunesContext {
                 for i in 0..=15 {
                     // format as hex
                     // only print when read from page 8000 ~ 8010
-                    ui.label(format!("{:02X}", self.cpu.bus.cpu_vram[(self.page_rom << 8 | addr << 4 | i) as usize]));
+                    ui.label(format!("{:02X}", self.cpu.bus.read_prg_rom(self.page_rom << 8 | addr << 4 | i)));
                 }
             });
         }
@@ -152,33 +152,6 @@ impl RunesApp {
         let [_ , rom_memory_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.38, vec!["ROM Memory Inspector".to_owned()]);
         let [_ , cpu_register_inspector_node_index] = tree.split_below(rom_memory_inspector_node_index, 0.7, vec!["CPU Register Inspector".to_owned()]);
         tree.split_right(cpu_register_inspector_node_index, 0.5, vec!["CPU Debug Inspector".to_owned()]);
-
-        print!("initializing cpu...");
-
-        // test code and cpu init
-        let test_code = vec![
-            0xA2, 0x0A,
-            0x8E, 0x00, 0x00,
-            0xA2, 0x03,
-            0x8E, 0x01, 0x00,
-            0xAC, 0x00, 0x00,
-            0xA9, 0x00,
-            0x18, 0x6D, 0x01, 0x00,
-            0x88, 0xD0, 0xFA,
-            0x8D, 0x02, 0x00,
-            0xEA, 0xEA, 0xEA
-        ];
-
-        for (i, byte) in test_code.iter().enumerate() {
-            cpu.bus.mem_write((0x8000 + i) as u16, *byte as u8);
-        }
-
-        cpu.bus.mem_write(0xFFFC, 0x00);
-        cpu.bus.mem_write(0xFFFD, 0x80);
-
-        cpu.reset();
-
-        println!("done");
 
         Self {
             context: RunesContext {

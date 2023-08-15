@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 
-struct INesHeader {
+pub struct INesHeader {
     name: [u8; 4],
     prg_rom_size: u8,
     chr_rom_size: u8,
@@ -14,10 +14,10 @@ struct INesHeader {
 }
 
 pub struct Cartridge {
-    header: INesHeader,
-    prg_rom: Vec<u8>,
-    chr_rom: Vec<u8>,
-    mapper: u8,
+    pub header: INesHeader,
+    pub prg_rom: Vec<u8>,
+    pub chr_rom: Vec<u8>,
+    pub mapper: u8,
 }
 
 impl Cartridge {

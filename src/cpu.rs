@@ -1,5 +1,6 @@
 use crate::opcodes::{references, Opcode};
 use crate::bus::Bus;
+use crate::cartridge::Cartridge;
 
 enum StatusFlag {
     C = (1 << 0), // Carry Bit
@@ -48,7 +49,7 @@ pub struct CPU {
 }
     
 impl CPU {
-    pub fn new() -> Self {
+    pub fn new(cartridge: Cartridge) -> Self {
         CPU {
             accumulator: 0x00,
             x_register: 0x00,
@@ -64,7 +65,7 @@ impl CPU {
             opcode: 0x00,
             cycles: 0x00,
 
-            bus: Bus::new(),
+            bus: Bus::new(cartridge),
         } 
     }
 
