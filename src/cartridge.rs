@@ -1,18 +1,27 @@
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 
+#[derive(Debug)]
 pub struct INesHeader {
     name: [u8; 4],
-    prg_rom_size: u8,
-    chr_rom_size: u8,
-    mapper_1: u8,
-    mapper_2: u8,
-    prg_ram_size: u8,
-    tv_system_1: u8,
-    tv_system_2: u8,
+    pub prg_rom_size: u8,
+    pub chr_rom_size: u8,
+    pub mapper_1: u8,
+    pub mapper_2: u8,
+    pub prg_ram_size: u8,
+    pub tv_system_1: u8,
+    pub tv_system_2: u8,
     unused: [u8; 5],
 }
 
+impl std::fmt::Display for INesHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mapper = (self.mapper_2 & 0xF0) | (self.mapper_1 >> 4);
+        write!(f, "Name: {:?}\nPRG ROM Size: {:?}\nCHR ROM Size: {:?}\nMapper: {:?}\n", self.name, self.prg_rom_size, self.chr_rom_size, mapper)
+    }
+}
+
+#[derive(Debug)]
 pub struct Cartridge {
     pub header: INesHeader,
     pub prg_rom: Vec<u8>,

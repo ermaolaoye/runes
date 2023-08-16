@@ -32,6 +32,7 @@ impl egui_dock::TabViewer for RunesContext {
             "CPU Register Inspector" => self.cpu_register_inspector(ui),
             "CPU Debug Inspector" => self.cpu_debug_inspector(ui),
             "ROM Memory Inspector" => self.rom_memory_inspector(ui),
+            "ROM Header Inspector" => self.rom_header_inspector(ui),
             _ => {}
         }
     }
@@ -127,10 +128,14 @@ impl RunesContext {
     }
 
     fn cpu_debug_inspector(&mut self, ui: &mut egui::Ui) {
-        ui.label("CPU Debug Inspector");
         ui.label(format!("Opcode {}", references::INSTRUCTION_LOOKUP[self.cpu.opcode as usize]));       
         ui.label(format!("Cycles: {:?}", self.cpu.cycles));
+    }
 
+    fn rom_header_inspector(&mut self, ui: &mut egui::Ui) {
+        ui.label(format!("PRG ROM Size: {}", self.cpu.bus.cartridge.header.prg_rom_size));
+        ui.label(format!("CHR ROM Size: {}", self.cpu.bus.cartridge.header.chr_rom_size));
+        ui.label(format!("Mapper: {}", (self.cpu.bus.cartridge.header.mapper_2 & 0xF0) | (self.cpu.bus.cartridge.header.mapper_1 >> 4)));
     }
 
     fn game(&mut self, ui: &mut egui::Ui) {
@@ -149,7 +154,7 @@ impl RunesApp {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
         let [_ , cpu_memory_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
-        let [_ , rom_memory_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.38, vec!["ROM Memory Inspector".to_owned()]);
+        let [_ , rom_memory_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.38, vec!["ROM Memory Inspector".to_owned(), "ROM Header Inspector".to_owned()]);
         let [_ , cpu_register_inspector_node_index] = tree.split_below(rom_memory_inspector_node_index, 0.7, vec!["CPU Register Inspector".to_owned()]);
         tree.split_right(cpu_register_inspector_node_index, 0.5, vec!["CPU Debug Inspector".to_owned()]);
 
