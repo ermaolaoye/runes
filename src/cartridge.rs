@@ -11,7 +11,7 @@ pub struct INesHeader {
     pub prg_ram_size: u8,
     pub tv_system_1: u8,
     pub tv_system_2: u8,
-    unused: [u8; 5],
+    _unused: [u8; 5],
 }
 
 impl std::fmt::Display for INesHeader {
@@ -22,10 +22,28 @@ impl std::fmt::Display for INesHeader {
 }
 
 #[derive(Debug)]
+pub enum Mirroring {
+    Horizontal,
+    Vertical,
+    FourScreen,
+}
+
+impl std::fmt::Display for Mirroring {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Mirroring::Horizontal => write!(f, "Horizontal"),
+            Mirroring::Vertical => write!(f, "Vertical"),
+            Mirroring::FourScreen => write!(f, "FourScreen"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Cartridge {
     pub header: INesHeader,
     pub prg_rom: Vec<u8>,
     pub chr_rom: Vec<u8>,
+    pub mirror: Mirroring,
     pub mapper: u8,
 }
 
@@ -45,7 +63,7 @@ impl Cartridge {
             prg_ram_size: header_buffer[8],
             tv_system_1: header_buffer[9],
             tv_system_2: header_buffer[10],
-            unused: [header_buffer[11], header_buffer[12], header_buffer[13], header_buffer[14], header_buffer[15]],
+            _unused: [header_buffer[11], header_buffer[12], header_buffer[13], header_buffer[14], header_buffer[15]],
         };
 
         if header.name != [0x4E, 0x45, 0x53, 0x1A] {
@@ -67,10 +85,21 @@ impl Cartridge {
         let mut chr_rom = vec![0; chr_bank_size];
         file.read_exact(&mut chr_rom).unwrap();
 
+        // Mirroing
+        let four_screen = header.mapper_1 & 0x08 == 0x08;
+        let vertical = header.mapper_1 & 0x01 == 0x01;
+
+        let mirror = match (four_screen, vertical) {
+            (true, _) => Mirroring::FourScreen,
+            (false, true) => Mirroring::Vertical,
+            (false, false) => Mirroring::Horizontal,
+        };
+
         Ok(Cartridge {
             header,
             prg_rom,
             chr_rom,
+            mirror,
             mapper,
         })
     }
