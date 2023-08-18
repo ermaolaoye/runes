@@ -69,7 +69,7 @@ impl CPU {
         } 
     }
 
-    pub fn read(&self, addr: u16, b_read_only: bool) -> u8 {
+    pub fn read(&mut self, addr: u16, _b_read_only: bool) -> u8 {
         self.bus.mem_read(addr)
     }
 
@@ -78,6 +78,9 @@ impl CPU {
     }
 
     pub fn clock(&mut self) {
+
+        self.bus.clock();
+
         if self.cycles == 0 {
             self.opcode = self.read(self.program_counter, false);
             self.program_counter += 1;

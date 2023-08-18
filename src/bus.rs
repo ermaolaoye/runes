@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::ppu::PPU;
 
 
 // Memory addresses
@@ -10,33 +11,42 @@ const PPU_REGISTERS_MIRRORS_END: u16 = 0x3FFF;
 pub struct Bus {
     pub cpu_vram: [u8; 2048],
     pub cartridge: Cartridge,
+    pub ppu: PPU,
 }
 
 impl Bus {
     pub fn new(cartridge: Cartridge) -> Bus {
         Bus {
             cpu_vram: [0; 2048],
+            ppu: PPU::new(cartridge.chr_rom.clone(), cartridge.mirror.clone()),
             cartridge,
         }
     }
 }
 
 impl Bus {
-    pub fn mem_read(&self, addr: u16) -> u8 {
+    pub fn mem_read(&mut self, addr: u16) -> u8 {
         match addr {
             RAM..=RAM_MIRRORS_END => {
-                let mirror_down_addr = addr & 0b00000111_11111111; // basically we do a mod 0x0800
+                let mirror_down_addr = addr & 0x07FF;                
                 self.cpu_vram[mirror_down_addr as usize]
             },
-            PPU_REGISTERS..=PPU_REGISTERS_MIRRORS_END => {
-                let mirror_down_addr = addr & 0b00100000_00000111;
-                todo!("PPU")
+
+            // PPU
+            0x2000 | 0x2001 | 0x2003 | 0x2005 | 0x2006 | 0x4014 => {
+                panic!("PPU write-only register read attempted at address {:#X}", addr);
             },
 
-            0x8000..=0xFFFF => {
-                println!("Reading from ROM");
-                self.read_prg_rom(addr)
+            0x2007 => self.ppu.read_data(),
+
+            0x2008..=PPU_REGISTERS_MIRRORS_END => {
+                let mirror_down_addr = addr & 0x0007;
+                self.mem_read(mirror_down_addr)
             },
+
+            // ROM(Cartridge)
+            0x8000..=0xFFFF => self.read_prg_rom(addr),
+            
 
             _ => {
                 println!("Unmapped memory address: {:#X}", addr);
@@ -52,6 +62,14 @@ impl Bus {
                 let mirror_down_addr = addr & 0b11111111_11111111;
                 self.cpu_vram[mirror_down_addr as usize] = data;
             },
+
+            0x2000 => self.ppu.write_to_control_register(data),
+
+            0x2006 => self.ppu.write_to_address_register(data),
+
+            0x2007 => self.ppu.write_data(data),
+
+
             PPU_REGISTERS..=PPU_REGISTERS_MIRRORS_END => {
                 let mirror_down_addr = addr & 0b00100000_00000111;
                 todo!("PPU")
@@ -76,6 +94,9 @@ impl Bus {
         }
 
         self.cartridge.prg_rom[addr as usize]
+    }
+
+    pub fn clock(&mut self) {
     }
 
 }

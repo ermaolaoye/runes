@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct INesHeader {
     name: [u8; 4],
     pub prg_rom_size: u8,
@@ -21,7 +21,7 @@ impl std::fmt::Display for INesHeader {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Mirroring {
     Horizontal,
     Vertical,
@@ -38,7 +38,7 @@ impl std::fmt::Display for Mirroring {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Cartridge {
     pub header: INesHeader,
     pub prg_rom: Vec<u8>,
