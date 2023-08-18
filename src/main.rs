@@ -4,6 +4,7 @@ pub mod bus;
 pub mod opcodes;
 pub mod ui;
 pub mod cartridge;
+pub mod renderer;
 
 use cpu::CPU;
 use ui::ui;

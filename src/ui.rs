@@ -1,7 +1,10 @@
 use eframe::egui;
 use crate::cpu::CPU;
+use crate::ppu::SYSTEM_PALLETE;
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
+
 use crate::opcodes::references;
+use crate::renderer;
 
 pub fn ui(cpu: CPU) -> Result<(), eframe::Error> {
     env_logger::init();
@@ -20,6 +23,8 @@ struct RunesContext {
     cpu: CPU,
     page_cpu: u16,
     page_rom: u16,
+
+    chr_rom_texture: Option<egui::TextureHandle>,
 }
 
 impl egui_dock::TabViewer for RunesContext {
@@ -33,6 +38,7 @@ impl egui_dock::TabViewer for RunesContext {
             "CPU Debug Inspector" => self.cpu_debug_inspector(ui),
             "ROM Memory Inspector" => self.rom_memory_inspector(ui),
             "ROM Header Inspector" => self.rom_header_inspector(ui),
+            "CHR ROM Inspector" => self.chr_rom_inspector(ui),
             _ => {}
         }
     }
@@ -138,6 +144,57 @@ impl RunesContext {
         ui.label(format!("Mapper: {}", (self.cpu.bus.cartridge.header.mapper_2 & 0xF0) | (self.cpu.bus.cartridge.header.mapper_1 >> 4)));
     }
 
+    fn chr_rom_inspector(&mut self, ui: &mut egui::Ui) {
+        let width = 256;
+        let height = 240;
+        let mut renderer = renderer::PPURenderer::new_custom_size(width, height);
+
+        let mut tile_y = 0;
+        let mut tile_x = 0;
+
+        for tile_n in 0..255 {
+            if tile_n != 0 && tile_n % 20 == 0 {
+                tile_y += 10;
+                tile_x = 0;
+                
+            }
+            // load tiles into texture
+            let tile = &self.cpu.bus.ppu.chr_rom[tile_n * 16 ..= tile_n * 16 + 15];
+
+            for tile_index_y in 0..=7 {
+                let mut upper = tile[tile_index_y];
+                let mut lower = tile[tile_index_y + 8];
+
+                for tile_index_x in (0..=7).rev() {
+                    let color = (1 & upper) << 1 | (1 & lower);
+                    upper >>= 1;
+                    lower >>= 1;
+
+
+                    let rgb = match color {
+                        0 => SYSTEM_PALLETE[0x01],
+                        1 => SYSTEM_PALLETE[0x23],
+                        2 => SYSTEM_PALLETE[0x30],
+                        3 => SYSTEM_PALLETE[0x3F],
+                        _ => panic!("Invalid color value"),
+                    };
+
+                    renderer.set_pixel(tile_x + tile_index_x, tile_y + tile_index_y, rgb);
+                }
+            }
+
+            tile_x += 10;
+        }
+
+        let texture: &egui::TextureHandle = self.chr_rom_texture.insert(
+            ui.ctx().load_texture("chr-rom-texture", renderer.get_color_image(), Default::default()));
+        
+        ui.image(texture, [ui.available_size().min_elem(), ui.available_size().min_elem()]);
+
+
+        
+    }
+
     fn game(&mut self, ui: &mut egui::Ui) {
         ui.label("Game");
     }
@@ -153,16 +210,22 @@ impl RunesApp {
     fn new(mut cpu: CPU) -> Self {
         let mut tree = Tree::new(vec!["Game".to_owned()]);
 
-        let [_ , cpu_memory_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+        let [game_node_index , cpu_memory_inspector_node_index] = tree.split_right(NodeIndex::root(), 0.78 ,vec!["CPU Memory Inspector".to_owned()]);
+
+        tree.split_left(game_node_index, 0.3, vec!["CHR ROM Inspector".to_owned()]);
+
         let [_ , rom_memory_inspector_node_index] = tree.split_below(cpu_memory_inspector_node_index, 0.38, vec!["ROM Memory Inspector".to_owned(), "ROM Header Inspector".to_owned()]);
         let [_ , cpu_register_inspector_node_index] = tree.split_below(rom_memory_inspector_node_index, 0.7, vec!["CPU Register Inspector".to_owned()]);
+
+
         tree.split_right(cpu_register_inspector_node_index, 0.5, vec!["CPU Debug Inspector".to_owned()]);
 
         Self {
             context: RunesContext {
                 cpu,
                 page_cpu: 0,
-                page_rom: 0x80
+                page_rom: 0x80,
+                chr_rom_texture: None,
             },
             tree
         }

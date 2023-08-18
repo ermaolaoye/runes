@@ -46,6 +46,8 @@ pub struct CPU {
     pub cycles: u8, // Counts how many cycles the instruction has remaining
     
     pub bus: Bus,
+
+    pub system_clock_counter: u32,
 }
     
 impl CPU {
@@ -66,6 +68,8 @@ impl CPU {
             cycles: 0x00,
 
             bus: Bus::new(cartridge),
+
+            system_clock_counter: 0,
         } 
     }
 
@@ -79,100 +83,112 @@ impl CPU {
 
     pub fn clock(&mut self) {
 
-        self.bus.clock();
+        self.bus.ppu.clock();
 
-        if self.cycles == 0 {
-            self.opcode = self.read(self.program_counter, false);
-            self.program_counter += 1;
-            
-            let operate = &references::INSTRUCTION_LOOKUP[self.opcode as usize].operate;
-            let addressing_mode = &references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode;
+        // CPU runs 1/3 as fast as PPU
 
-            self.cycles = references::INSTRUCTION_LOOKUP[self.opcode as usize].cycles;
+        if self.system_clock_counter % 3 == 0 {
+            if self.cycles == 0 {
+                self.opcode = self.read(self.program_counter, false);
+                self.program_counter += 1;
 
+                let operate = &references::INSTRUCTION_LOOKUP[self.opcode as usize].operate;
+                let addressing_mode = &references::INSTRUCTION_LOOKUP[self.opcode as usize].addrmode;
 
-            let additional_cycle1: u8 = match addressing_mode {
-                AddressingMode::IMP => self.imp(),
-                AddressingMode::IMM => self.imm(),
-                AddressingMode::ZP0 => self.zp0(),
-                AddressingMode::ZPX => self.zpx(),
-                AddressingMode::ZPY => self.zpy(),
-                AddressingMode::REL => self.rel(),
-                AddressingMode::ABS => self.abs(),
-                AddressingMode::ABX => self.abx(),
-                AddressingMode::ABY => self.aby(),
-                AddressingMode::IND => self.ind(),
-                AddressingMode::IZX => self.izx(),
-                AddressingMode::IZY => self.izy(),
-            };
-            
-            let additional_cycle2: u8 = match operate {
-                Opcode::ADC => self.adc(),
-                Opcode::AND => self.and(),
-                Opcode::ASL => self.asl(),
-                Opcode::BCC => self.bcc(),
-                Opcode::BCS => self.bcs(),
-                Opcode::BEQ => self.beq(),
-                Opcode::BIT => self.bit(),
-                Opcode::BMI => self.bmi(),
-                Opcode::BNE => self.bne(),
-                Opcode::BPL => self.bpl(),
-                Opcode::BRK => self.brk(),
-                Opcode::BVC => self.bvc(),
-                Opcode::BVS => self.bvs(),
-                Opcode::CLC => self.clc(),
-                Opcode::CLD => self.cld(),
-                Opcode::CLI => self.cli(),
-                Opcode::CLV => self.clv(),
-                Opcode::CMP => self.cmp(),
-                Opcode::CPX => self.cpx(),
-                Opcode::CPY => self.cpy(),
-                Opcode::DEC => self.dec(),
-                Opcode::DEX => self.dex(),
-                Opcode::DEY => self.dey(),
-                Opcode::EOR => self.eor(),
-                Opcode::INC => self.inc(),
-                Opcode::INX => self.inx(),
-                Opcode::INY => self.iny(),
-                Opcode::JMP => self.jmp(),
-                Opcode::JSR => self.jsr(),
-                Opcode::LDA => self.lda(),
-                Opcode::LDX => self.ldx(),
-                Opcode::LDY => self.ldy(),
-                Opcode::LSR => self.lsr(),
-                Opcode::NOP => self.nop(),
-                Opcode::ORA => self.ora(),
-                Opcode::PHA => self.pha(),
-                Opcode::PHP => self.php(),
-                Opcode::PLA => self.pla(),
-                Opcode::PLP => self.plp(),
-                Opcode::ROL => self.rol(),
-                Opcode::ROR => self.ror(),
-                Opcode::RTI => self.rti(),
-                Opcode::RTS => self.rts(),
-                Opcode::SBC => self.sbc(),
-                Opcode::SEC => self.sec(),
-                Opcode::SED => self.sed(),
-                Opcode::SEI => self.sei(),
-                Opcode::STA => self.sta(),
-                Opcode::STX => self.stx(),
-                Opcode::STY => self.sty(),
-                Opcode::TAX => self.tax(),
-                Opcode::TAY => self.tay(),
-                Opcode::TSX => self.tsx(),
-                Opcode::TXA => self.txa(),
-                Opcode::TXS => self.txs(),
-                Opcode::TYA => self.tya(),
-                Opcode::XXX => self.xxx(),
-            };
+                self.cycles = references::INSTRUCTION_LOOKUP[self.opcode as usize].cycles;
 
 
-            self.cycles += additional_cycle1 & additional_cycle2;
+                let additional_cycle1: u8 = match addressing_mode {
+                    AddressingMode::IMP => self.imp(),
+                    AddressingMode::IMM => self.imm(),
+                    AddressingMode::ZP0 => self.zp0(),
+                    AddressingMode::ZPX => self.zpx(),
+                    AddressingMode::ZPY => self.zpy(),
+                    AddressingMode::REL => self.rel(),
+                    AddressingMode::ABS => self.abs(),
+                    AddressingMode::ABX => self.abx(),
+                    AddressingMode::ABY => self.aby(),
+                    AddressingMode::IND => self.ind(),
+                    AddressingMode::IZX => self.izx(),
+                    AddressingMode::IZY => self.izy(),
+                };
 
-            self.set_flag(StatusFlag::U, true);
+                let additional_cycle2: u8 = match operate {
+                    Opcode::ADC => self.adc(),
+                    Opcode::AND => self.and(),
+                    Opcode::ASL => self.asl(),
+                    Opcode::BCC => self.bcc(),
+                    Opcode::BCS => self.bcs(),
+                    Opcode::BEQ => self.beq(),
+                    Opcode::BIT => self.bit(),
+                    Opcode::BMI => self.bmi(),
+                    Opcode::BNE => self.bne(),
+                    Opcode::BPL => self.bpl(),
+                    Opcode::BRK => self.brk(),
+                    Opcode::BVC => self.bvc(),
+                    Opcode::BVS => self.bvs(),
+                    Opcode::CLC => self.clc(),
+                    Opcode::CLD => self.cld(),
+                    Opcode::CLI => self.cli(),
+                    Opcode::CLV => self.clv(),
+                    Opcode::CMP => self.cmp(),
+                    Opcode::CPX => self.cpx(),
+                    Opcode::CPY => self.cpy(),
+                    Opcode::DEC => self.dec(),
+                    Opcode::DEX => self.dex(),
+                    Opcode::DEY => self.dey(),
+                    Opcode::EOR => self.eor(),
+                    Opcode::INC => self.inc(),
+                    Opcode::INX => self.inx(),
+                    Opcode::INY => self.iny(),
+                    Opcode::JMP => self.jmp(),
+                    Opcode::JSR => self.jsr(),
+                    Opcode::LDA => self.lda(),
+                    Opcode::LDX => self.ldx(),
+                    Opcode::LDY => self.ldy(),
+                    Opcode::LSR => self.lsr(),
+                    Opcode::NOP => self.nop(),
+Opcode::ORA => self.ora(),
+Opcode::PHA => self.pha(),
+                    Opcode::PHP => self.php(),
+Opcode::PLA => self.pla(),
+                    Opcode::PLP => self.plp(),
+                    Opcode::ROL => self.rol(),
+                    Opcode::ROR => self.ror(),
+                    Opcode::RTI => self.rti(),
+                    Opcode::RTS => self.rts(),
+                    Opcode::SBC => self.sbc(),
+                    Opcode::SEC => self.sec(),
+                    Opcode::SED => self.sed(),
+                    Opcode::SEI => self.sei(),
+                    Opcode::STA => self.sta(),
+                    Opcode::STX => self.stx(),
+                    Opcode::STY => self.sty(),
+                    Opcode::TAX => self.tax(),
+                    Opcode::TAY => self.tay(),
+                    Opcode::TSX => self.tsx(),
+                    Opcode::TXA => self.txa(),
+                    Opcode::TXS => self.txs(),
+                    Opcode::TYA => self.tya(),
+                    Opcode::XXX => self.xxx(),
+                };
+
+
+                self.cycles += additional_cycle1 & additional_cycle2;
+
+                self.set_flag(StatusFlag::U, true);
+            }
+
+            self.cycles -= 1;
         }
 
-        self.cycles -= 1;
+        // When entering vblank, the PPU will set the NMI flag 
+        if self.bus.ppu.nmi {
+            self.bus.ppu.nmi = false;
+            self.nmi();
+        }
+
+        self.system_clock_counter += 1;
     }
 }
 
